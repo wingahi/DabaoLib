@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Xml;
+﻿using System.Xml;
 
 namespace myLib.Common
 {
@@ -24,7 +20,7 @@ namespace myLib.Common
         {
             try
             {
-                XmlDocument doc = new XmlDocument();
+                var doc = new XmlDocument();
                 doc.Load(filePath);
                 XmlNode xn = doc.SelectSingleNode(xPath);
                 XmlNode n = doc.ImportNode(xmlNode, true);
@@ -50,7 +46,7 @@ namespace myLib.Common
         {
             try
             {
-                XmlDocument doc = new XmlDocument();
+                var doc = new XmlDocument();
                 doc.Load(toFilePath);
                 XmlNode xn = doc.SelectSingleNode(toXPath);
 
@@ -83,10 +79,10 @@ namespace myLib.Common
         {
             try
             {
-                XmlDocument doc = new XmlDocument();
+                var doc = new XmlDocument();
                 doc.Load(filePath);
                 XmlNode xn = doc.SelectSingleNode(xPath);
-                XmlElement xe = (XmlElement)xn;
+                var xe = (XmlElement)xn;
                 xe.InnerText = value;
                 doc.Save(filePath);
             }
@@ -106,7 +102,7 @@ namespace myLib.Common
         {
             try
             {
-                XmlDocument doc = new XmlDocument();
+                var doc = new XmlDocument();
                 doc.Load(filePath);
                 return doc;
             }
@@ -128,7 +124,7 @@ namespace myLib.Common
         {
             try
             {
-                XmlDocument doc = new XmlDocument();
+                var doc = new XmlDocument();
                 doc.Load(filePath);
                 XmlNode xn = doc.SelectSingleNode(xPath);
                 XmlNodeList xnList = xn.ChildNodes;  //得到该节点的子节点

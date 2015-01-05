@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
+﻿using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace myLib.Common
 {
@@ -19,15 +16,15 @@ namespace myLib.Common
         /// <param name="imgPath">服务器图片相对路径</param>
         /// <param name="filename">保存文件名</param>
         /// <param name="watermarkFilename">水印文件相对路径</param>
-        /// <param name="watermarkStatus">图片水印位置 0=不使用 1=左上 2=中上 3=右上 4=左中  9=右下</param>
+        /// <param name="watermarkStatus">图片水印位置 -1=不使用 0=平铺 1=左上 2=中上 3=右上 4=左中  9=右下</param>
         /// <param name="quality">附加水印图片质量,0-100</param>
         /// <param name="watermarkTransparency">水印的透明度 1--10 10为不透明</param>
         public static void AddImageSignPic(string imgPath, string filename, string watermarkFilename, int watermarkStatus, int quality, int watermarkTransparency)
         {
             if (!File.Exists(Utils.GetMapPath(imgPath)))
                 return;
-            byte[] _ImageBytes = File.ReadAllBytes(Utils.GetMapPath(imgPath));
-            Image img = Image.FromStream(new System.IO.MemoryStream(_ImageBytes));
+            var imageBytes = File.ReadAllBytes(Utils.GetMapPath(imgPath));
+            var img = Image.FromStream(new MemoryStream(imageBytes));
             filename = Utils.GetMapPath(filename);
 
             if (watermarkFilename.StartsWith("/") == false)
@@ -35,26 +32,28 @@ namespace myLib.Common
             watermarkFilename = Utils.GetMapPath(watermarkFilename);
             if (!File.Exists(watermarkFilename))
                 return;
-            Graphics g = Graphics.FromImage(img);
+            var g = Graphics.FromImage(img);
             //设置高质量插值法
-            //g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+            g.InterpolationMode = InterpolationMode.High;
             //设置高质量,低速度呈现平滑程度
-            //g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            g.SmoothingMode = SmoothingMode.HighQuality;
             Image watermark = new Bitmap(watermarkFilename);
 
             if (watermark.Height >= img.Height || watermark.Width >= img.Width)
                 return;
 
-            ImageAttributes imageAttributes = new ImageAttributes();
-            ColorMap colorMap = new ColorMap();
+            var imageAttributes = new ImageAttributes();
+            var colorMap = new ColorMap
+            {
+                OldColor = Color.FromArgb(255, 0, 255, 0),
+                NewColor = Color.FromArgb(0, 0, 0, 0)
+            };
 
-            colorMap.OldColor = Color.FromArgb(255, 0, 255, 0);
-            colorMap.NewColor = Color.FromArgb(0, 0, 0, 0);
             ColorMap[] remapTable = { colorMap };
 
             imageAttributes.SetRemapTable(remapTable, ColorAdjustType.Bitmap);
 
-            float transparency = 0.5F;
+            var transparency = 0.5F;
             if (watermarkTransparency >= 1 && watermarkTransparency <= 10)
                 transparency = (watermarkTransparency / 10.0F);
 
@@ -67,15 +66,22 @@ namespace myLib.Common
 												new float[] {0.0f,  0.0f,  0.0f,  0.0f, 1.0f}
 											};
 
-            ColorMatrix colorMatrix = new ColorMatrix(colorMatrixElements);
+            var colorMatrix = new ColorMatrix(colorMatrixElements);
 
             imageAttributes.SetColorMatrix(colorMatrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
 
-            int xpos = 0;
-            int ypos = 0;
+            var xpos = 0;
+            var ypos = 0;
+            var width = watermark.Width;
+            var height = watermark.Height;
 
             switch (watermarkStatus)
             {
+                case 0:
+                    imageAttributes.SetWrapMode(WrapMode.Tile);
+                    width = img.Width;
+                    height = img.Height;
+                    break;
                 case 1:
                     xpos = (int)(img.Width * (float).01);
                     ypos = (int)(img.Height * (float).01);
@@ -114,23 +120,23 @@ namespace myLib.Common
                     break;
             }
 
-            g.DrawImage(watermark, new Rectangle(xpos, ypos, watermark.Width, watermark.Height), 0, 0, watermark.Width, watermark.Height, GraphicsUnit.Pixel, imageAttributes);
+            g.DrawImage(watermark, new Rectangle(xpos, ypos, width, height), 0, 0, width, height, GraphicsUnit.Pixel, imageAttributes);
 
-            ImageCodecInfo[] codecs = ImageCodecInfo.GetImageEncoders();
+            var codecs = ImageCodecInfo.GetImageEncoders();
             ImageCodecInfo ici = null;
-            foreach (ImageCodecInfo codec in codecs)
+            foreach (var codec in codecs)
             {
                 if (codec.MimeType.IndexOf("jpeg") > -1)
                     ici = codec;
             }
-            EncoderParameters encoderParams = new EncoderParameters();
-            long[] qualityParam = new long[1];
+            var encoderParams = new EncoderParameters();
+            var qualityParam = new long[1];
             if (quality < 0 || quality > 100)
                 quality = 80;
 
             qualityParam[0] = quality;
 
-            EncoderParameter encoderParam = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, qualityParam);
+            var encoderParam = new EncoderParameter(Encoder.Quality, qualityParam);
             encoderParams.Param[0] = encoderParam;
 
             if (ici != null)
@@ -156,14 +162,13 @@ namespace myLib.Common
         /// <param name="fontsize">字体大小</param>
         public static void AddImageSignText(string imgPath, string filename, string watermarkText, int watermarkStatus, int quality, string fontname, int fontsize)
         {
-            byte[] _ImageBytes = File.ReadAllBytes(Utils.GetMapPath(imgPath));
-            Image img = Image.FromStream(new System.IO.MemoryStream(_ImageBytes));
+            var imageBytes = File.ReadAllBytes(Utils.GetMapPath(imgPath));
+            var img = Image.FromStream(new MemoryStream(imageBytes));
             filename = Utils.GetMapPath(filename);
 
-            Graphics g = Graphics.FromImage(img);
-            Font drawFont = new Font(fontname, fontsize, FontStyle.Regular, GraphicsUnit.Pixel);
-            SizeF crSize;
-            crSize = g.MeasureString(watermarkText, drawFont);
+            var g = Graphics.FromImage(img);
+            var drawFont = new Font(fontname, fontsize, FontStyle.Regular, GraphicsUnit.Pixel);
+            SizeF crSize = g.MeasureString(watermarkText, drawFont);
 
             float xpos = 0;
             float ypos = 0;
@@ -211,21 +216,21 @@ namespace myLib.Common
             g.DrawString(watermarkText, drawFont, new SolidBrush(Color.White), xpos + 1, ypos + 1);
             g.DrawString(watermarkText, drawFont, new SolidBrush(Color.Black), xpos, ypos);
 
-            ImageCodecInfo[] codecs = ImageCodecInfo.GetImageEncoders();
+            var codecs = ImageCodecInfo.GetImageEncoders();
             ImageCodecInfo ici = null;
-            foreach (ImageCodecInfo codec in codecs)
+            foreach (var codec in codecs)
             {
                 if (codec.MimeType.IndexOf("jpeg") > -1)
                     ici = codec;
             }
-            EncoderParameters encoderParams = new EncoderParameters();
-            long[] qualityParam = new long[1];
+            var encoderParams = new EncoderParameters();
+            var qualityParam = new long[1];
             if (quality < 0 || quality > 100)
                 quality = 80;
 
             qualityParam[0] = quality;
 
-            EncoderParameter encoderParam = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, qualityParam);
+            var encoderParam = new EncoderParameter(Encoder.Quality, qualityParam);
             encoderParams.Param[0] = encoderParam;
 
             if (ici != null)

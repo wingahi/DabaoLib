@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Web;
+using myLib.CacheStorage;
 
 namespace myLib.Common
 {
@@ -15,28 +18,6 @@ namespace myLib.Common
     /// </summary>
     public class Utils
     {
-        #region MD5加密
-        /// <summary>
-        /// MD5加密
-        /// </summary>
-        /// <param name="pwd"></param>
-        /// <returns></returns>
-        public static string MD5(string pwd)
-        {
-            MD5 md5 = new MD5CryptoServiceProvider();
-            byte[] data = System.Text.Encoding.Default.GetBytes(pwd);
-            byte[] md5data = md5.ComputeHash(data);
-            md5.Clear();
-            string str = "";
-            for (int i = 0; i < md5data.Length; i++)
-            {
-                str += md5data[i].ToString("x").PadLeft(2, '0');
-
-            }
-            return str;
-        }
-        #endregion
-
         #region 对象转换处理
         /// <summary>
         /// 判断对象是否为Int32类型的数字
@@ -47,9 +28,7 @@ namespace myLib.Common
         {
             if (expression != null)
                 return IsNumeric(expression.ToString());
-
             return false;
-
         }
 
         /// <summary>
@@ -59,14 +38,12 @@ namespace myLib.Common
         /// <returns></returns>
         public static bool IsNumeric(string expression)
         {
-            if (expression != null)
+            if (expression == null) return false;
+            var str = expression;
+            if (str.Length > 0 && str.Length <= 11 && Regex.IsMatch(str, @"^[-]?[0-9]*[.]?[0-9]*$"))
             {
-                string str = expression;
-                if (str.Length > 0 && str.Length <= 11 && Regex.IsMatch(str, @"^[-]?[0-9]*[.]?[0-9]*$"))
-                {
-                    if ((str.Length < 10) || (str.Length == 10 && str[0] == '1') || (str.Length == 11 && str[0] == '-' && str[1] == '1'))
-                        return true;
-                }
+                if ((str.Length < 10) || (str.Length == 10 && str[0] == '1') || (str.Length == 11 && str[0] == '-' && str[1] == '1'))
+                    return true;
             }
             return false;
         }
@@ -131,8 +108,8 @@ namespace myLib.Common
         /// <returns>String</returns>
         public static string GetArrayStr(List<string> list, string speater)
         {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < list.Count; i++)
+            var sb = new StringBuilder();
+            for (var i = 0; i < list.Count; i++)
             {
                 if (i == list.Count - 1)
                 {
@@ -236,10 +213,10 @@ namespace myLib.Common
             if ((expression == null) || (expression.Length > 10))
                 return defValue;
 
-            decimal intValue = defValue;
+            var intValue = defValue;
             if (expression != null)
             {
-                bool IsDecimal = Regex.IsMatch(expression, @"^([-]|[0-9])[0-9]*(\.\w*)?$");
+                var IsDecimal = Regex.IsMatch(expression, @"^([-]|[0-9])[0-9]*(\.\w*)?$");
                 if (IsDecimal)
                     decimal.TryParse(expression, out intValue);
             }
@@ -271,10 +248,10 @@ namespace myLib.Common
             if ((expression == null) || (expression.Length > 10))
                 return defValue;
 
-            float intValue = defValue;
+            var intValue = defValue;
             if (expression != null)
             {
-                bool IsFloat = Regex.IsMatch(expression, @"^([-]|[0-9])[0-9]*(\.\w*)?$");
+                var IsFloat = Regex.IsMatch(expression, @"^([-]|[0-9])[0-9]*(\.\w*)?$");
                 if (IsFloat)
                     float.TryParse(expression, out intValue);
             }
@@ -365,10 +342,10 @@ namespace myLib.Common
         /// <returns></returns>
         public static string[] SplitString(string strContent, string strSplit, int count)
         {
-            string[] result = new string[count];
-            string[] splited = SplitString(strContent, strSplit);
+            var result = new string[count];
+            var splited = SplitString(strContent, strSplit);
 
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 if (i < splited.Length)
                     result[i] = splited[i];
@@ -419,13 +396,13 @@ namespace myLib.Common
         /// <returns></returns>
         public static string StringOfChar(int strLong, string str)
         {
-            string ReturnStr = "";
-            for (int i = 0; i < strLong; i++)
+            var returnStr = "";
+            for (var i = 0; i < strLong; i++)
             {
-                ReturnStr += str;
+                returnStr += str;
             }
 
-            return ReturnStr;
+            return returnStr;
         }
         #endregion
 
@@ -446,26 +423,26 @@ namespace myLib.Common
         /// <summary>
         /// 生成随机数字
         /// </summary>
-        /// <param name="Length">生成长度</param>
+        /// <param name="length">生成长度</param>
         /// <returns></returns>
-        public static string Number(int Length)
+        public static string Number(int length)
         {
-            return Number(Length, false);
+            return Number(length, false);
         }
 
         /// <summary>
         /// 生成随机数字
         /// </summary>
-        /// <param name="Length">生成长度</param>
-        /// <param name="Sleep">是否要在生成前将当前线程阻止以避免重复</param>
+        /// <param name="length">生成长度</param>
+        /// <param name="sleep">是否要在生成前将当前线程阻止以避免重复</param>
         /// <returns></returns>
-        public static string Number(int Length, bool Sleep)
+        public static string Number(int length, bool sleep)
         {
-            if (Sleep)
-                System.Threading.Thread.Sleep(3);
-            string result = "";
-            System.Random random = new Random();
-            for (int i = 0; i < Length; i++)
+            if (sleep)
+                Thread.Sleep(3);
+            var result = "";
+            var random = new Random();
+            for (var i = 0; i < length; i++)
             {
                 result += random.Next(10).ToString();
             }
@@ -477,15 +454,15 @@ namespace myLib.Common
         /// <param name="codeCount">待生成的位数</param>
         public static string GetCheckCode(int codeCount)
         {
-            string str = string.Empty;
-            int rep = 0;
-            long num2 = DateTime.Now.Ticks + rep;
+            var str = string.Empty;
+            var rep = 0;
+            var num2 = DateTime.Now.Ticks + rep;
             rep++;
-            Random random = new Random(((int)(((ulong)num2) & 0xffffffffL)) | ((int)(num2 >> rep)));
-            for (int i = 0; i < codeCount; i++)
+            var random = new Random(((int)(((ulong)num2) & 0xffffffffL)) | ((int)(num2 >> rep)));
+            for (var i = 0; i < codeCount; i++)
             {
                 char ch;
-                int num = random.Next();
+                var num = random.Next();
                 if ((num % 2) == 0)
                 {
                     ch = (char)(0x30 + ((ushort)(num % 10)));
@@ -504,16 +481,16 @@ namespace myLib.Common
         /// <returns></returns>
         public static string GetOrderNumber()
         {
-            string num = DateTime.Now.ToString("yyMMddHHmmss");//yyyyMMddHHmmssms
+            var num = DateTime.Now.ToString("yyMMddHHmmss");//yyyyMMddHHmmssms
             return num + Number(2).ToString();
         }
         private static int Next(int numSeeds, int length)
         {
-            byte[] buffer = new byte[length];
-            System.Security.Cryptography.RNGCryptoServiceProvider Gen = new System.Security.Cryptography.RNGCryptoServiceProvider();
-            Gen.GetBytes(buffer);
+            var buffer = new byte[length];
+            var gen = new RNGCryptoServiceProvider();
+            gen.GetBytes(buffer);
             uint randomResult = 0x0;//这里用uint作为生成的随机数  
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
             {
                 randomResult |= ((uint)buffer[i] << ((length - 1 - i) * 8));
             }
@@ -533,11 +510,11 @@ namespace myLib.Common
             if (string.IsNullOrEmpty(inputString))
                 return "";
             inputString = DropHTML(inputString);
-            ASCIIEncoding ascii = new ASCIIEncoding();
-            int tempLen = 0;
-            string tempString = "";
-            byte[] s = ascii.GetBytes(inputString);
-            for (int i = 0; i < s.Length; i++)
+            var ascii = new ASCIIEncoding();
+            var tempLen = 0;
+            var tempString = "";
+            var s = ascii.GetBytes(inputString);
+            for (var i = 0; i < s.Length; i++)
             {
                 if ((int)s[i] == 63)
                 {
@@ -561,7 +538,7 @@ namespace myLib.Common
                     break;
             }
             //如果截过则加上半个省略号 
-            byte[] mybyte = System.Text.Encoding.Default.GetBytes(inputString);
+            var mybyte = Encoding.Default.GetBytes(inputString);
             if (mybyte.Length > len)
                 tempString += "…";
             return tempString;
@@ -572,34 +549,34 @@ namespace myLib.Common
         /// <summary>
         /// 清除HTML标记
         /// </summary>
-        /// <param name="Htmlstring"></param>
+        /// <param name="htmlstring"></param>
         /// <returns></returns>
-        public static string DropHTML(string Htmlstring)
+        public static string DropHTML(string htmlstring)
         {
-            if (string.IsNullOrEmpty(Htmlstring)) return "";
+            if (string.IsNullOrEmpty(htmlstring)) return "";
             //删除脚本  
-            Htmlstring = Regex.Replace(Htmlstring, @"<script[^>]*?>.*?</script>", "", RegexOptions.IgnoreCase);
+            htmlstring = Regex.Replace(htmlstring, @"<script[^>]*?>.*?</script>", "", RegexOptions.IgnoreCase);
             //删除HTML  
-            Htmlstring = Regex.Replace(Htmlstring, @"<(.[^>]*)>", "", RegexOptions.IgnoreCase);
-            Htmlstring = Regex.Replace(Htmlstring, @"([\r\n])[\s]+", "", RegexOptions.IgnoreCase);
-            Htmlstring = Regex.Replace(Htmlstring, @"-->", "", RegexOptions.IgnoreCase);
-            Htmlstring = Regex.Replace(Htmlstring, @"<!--.*", "", RegexOptions.IgnoreCase);
-            Htmlstring = Regex.Replace(Htmlstring, @"&(quot|#34);", "\"", RegexOptions.IgnoreCase);
-            Htmlstring = Regex.Replace(Htmlstring, @"&(amp|#38);", "&", RegexOptions.IgnoreCase);
-            Htmlstring = Regex.Replace(Htmlstring, @"&(lt|#60);", "<", RegexOptions.IgnoreCase);
-            Htmlstring = Regex.Replace(Htmlstring, @"&(gt|#62);", ">", RegexOptions.IgnoreCase);
-            Htmlstring = Regex.Replace(Htmlstring, @"&(nbsp|#160);", " ", RegexOptions.IgnoreCase);
-            Htmlstring = Regex.Replace(Htmlstring, @"&(iexcl|#161);", "\xa1", RegexOptions.IgnoreCase);
-            Htmlstring = Regex.Replace(Htmlstring, @"&(cent|#162);", "\xa2", RegexOptions.IgnoreCase);
-            Htmlstring = Regex.Replace(Htmlstring, @"&(pound|#163);", "\xa3", RegexOptions.IgnoreCase);
-            Htmlstring = Regex.Replace(Htmlstring, @"&(copy|#169);", "\xa9", RegexOptions.IgnoreCase);
+            htmlstring = Regex.Replace(htmlstring, @"<(.[^>]*)>", "", RegexOptions.IgnoreCase);
+            htmlstring = Regex.Replace(htmlstring, @"([\r\n])[\s]+", "", RegexOptions.IgnoreCase);
+            htmlstring = Regex.Replace(htmlstring, @"-->", "", RegexOptions.IgnoreCase);
+            htmlstring = Regex.Replace(htmlstring, @"<!--.*", "", RegexOptions.IgnoreCase);
+            htmlstring = Regex.Replace(htmlstring, @"&(quot|#34);", "\"", RegexOptions.IgnoreCase);
+            htmlstring = Regex.Replace(htmlstring, @"&(amp|#38);", "&", RegexOptions.IgnoreCase);
+            htmlstring = Regex.Replace(htmlstring, @"&(lt|#60);", "<", RegexOptions.IgnoreCase);
+            htmlstring = Regex.Replace(htmlstring, @"&(gt|#62);", ">", RegexOptions.IgnoreCase);
+            htmlstring = Regex.Replace(htmlstring, @"&(nbsp|#160);", " ", RegexOptions.IgnoreCase);
+            htmlstring = Regex.Replace(htmlstring, @"&(iexcl|#161);", "\xa1", RegexOptions.IgnoreCase);
+            htmlstring = Regex.Replace(htmlstring, @"&(cent|#162);", "\xa2", RegexOptions.IgnoreCase);
+            htmlstring = Regex.Replace(htmlstring, @"&(pound|#163);", "\xa3", RegexOptions.IgnoreCase);
+            htmlstring = Regex.Replace(htmlstring, @"&(copy|#169);", "\xa9", RegexOptions.IgnoreCase);
 
-            Htmlstring = Regex.Replace(Htmlstring, @"&#(\d+);", "", RegexOptions.IgnoreCase);
-            Htmlstring.Replace("<", "");
-            Htmlstring.Replace(">", "");
-            Htmlstring.Replace("\r\n", "");
-            Htmlstring = HttpContext.Current.Server.HtmlEncode(Htmlstring).Trim();
-            return Htmlstring;
+            htmlstring = Regex.Replace(htmlstring, @"&#(\d+);", "", RegexOptions.IgnoreCase);
+            htmlstring = htmlstring.Replace("<", "");
+            htmlstring = htmlstring.Replace(">", "");
+            htmlstring = htmlstring.Replace("\r\n", "");
+            htmlstring = HttpContext.Current.Server.HtmlEncode(htmlstring).Trim();
+            return htmlstring;
         }
         #endregion
 
@@ -607,12 +584,12 @@ namespace myLib.Common
         /// <summary>
         /// 清除HTML标记且返回相应的长度
         /// </summary>
-        /// <param name="Htmlstring"></param>
+        /// <param name="htmlstring"></param>
         /// <param name="strLen"></param>
         /// <returns></returns>
-        public static string DropHTML(string Htmlstring, int strLen)
+        public static string DropHTML(string htmlstring, int strLen)
         {
-            return CutString(DropHTML(Htmlstring), strLen);
+            return CutString(DropHTML(htmlstring), strLen);
         }
         #endregion
 
@@ -620,12 +597,12 @@ namespace myLib.Common
         /// <summary>
         /// 字符串字符处理
         /// </summary>
-        /// <param name="Input">等待处理的字符串</param>
+        /// <param name="input">等待处理的字符串</param>
         /// <returns>处理后的字符串</returns>
         /// //把TXT代码转换成HTML格式
-        public static String ToHtml(string Input)
+        public static String ToHtml(string input)
         {
-            StringBuilder sb = new StringBuilder(Input);
+            var sb = new StringBuilder(input);
             sb.Replace("&", "&amp;");
             sb.Replace("<", "&lt;");
             sb.Replace(">", "&gt;");
@@ -641,12 +618,12 @@ namespace myLib.Common
         /// <summary>
         /// 字符串字符处理
         /// </summary>
-        /// <param name="Input">等待处理的字符串</param>
+        /// <param name="input">等待处理的字符串</param>
         /// <returns>处理后的字符串</returns>
         /// //把HTML代码转换成TXT格式
-        public static String ToTxt(String Input)
+        public static String ToTxt(String input)
         {
-            StringBuilder sb = new StringBuilder(Input);
+            var sb = new StringBuilder(input);
             sb.Replace("&nbsp;", " ");
             sb.Replace("<br>", "\r\n");
             sb.Replace("<br>", "\n");
@@ -677,11 +654,11 @@ namespace myLib.Common
         /// <returns></returns>
         public static string Filter(string sInput)
         {
-            if (sInput == null || sInput == "")
+            if (string.IsNullOrEmpty(sInput))
                 return null;
-            string sInput1 = sInput.ToLower();
-            string output = sInput;
-            string pattern = @"*|and|exec|insert|select|delete|update|count|master|truncate|declare|char(|mid(|chr(|'";
+            var sInput1 = sInput.ToLower();
+            var output = sInput;
+            var pattern = @"*|and|exec|insert|select|delete|update|count|master|truncate|declare|char(|mid(|chr(|'";
             if (Regex.Match(sInput1, Regex.Escape(pattern), RegexOptions.Compiled | RegexOptions.IgnoreCase).Success)
             {
                 throw new Exception("字符串中含有非法字符!");
@@ -703,7 +680,7 @@ namespace myLib.Common
         {
             if (InText == null)
                 return false;
-            foreach (string i in word.Split('|'))
+            foreach (var i in word.Split('|'))
             {
                 if ((InText.ToLower().IndexOf(i + " ") > -1) || (InText.ToLower().IndexOf(" " + i) > -1))
                 {
@@ -718,13 +695,13 @@ namespace myLib.Common
         /// <summary>
         /// 过滤特殊字符
         /// </summary>
-        /// <param name="Input"></param>
+        /// <param name="input"></param>
         /// <returns></returns>
-        public static string Htmls(string Input)
+        public static string Htmls(string input)
         {
-            if (Input != string.Empty && Input != null)
+            if (!string.IsNullOrEmpty(input))
             {
-                string ihtml = Input.ToLower();
+                var ihtml = input.ToLower();
                 ihtml = ihtml.Replace("<script", "&lt;script");
                 ihtml = ihtml.Replace("script>", "script&gt;");
                 ihtml = ihtml.Replace("<%", "&lt;%");
@@ -787,7 +764,7 @@ namespace myLib.Common
                 {
                     strPath = strPath.Substring(strPath.IndexOf('\\', 1)).TrimStart('\\');
                 }
-                return System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, strPath);
+                return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, strPath);
             }
         }
         #endregion
@@ -796,14 +773,14 @@ namespace myLib.Common
         /// <summary>
         /// 删除单个文件
         /// </summary>
-        /// <param name="_filepath">文件相对路径</param>
-        public static bool DeleteFile(string _filepath)
+        /// <param name="filepath">文件相对路径</param>
+        public static bool DeleteFile(string filepath)
         {
-            if (string.IsNullOrEmpty(_filepath))
+            if (string.IsNullOrEmpty(filepath))
             {
                 return false;
             }
-            string fullpath = GetMapPath(_filepath);
+            var fullpath = GetMapPath(filepath);
             if (File.Exists(fullpath))
             {
                 File.Delete(fullpath);
@@ -815,25 +792,25 @@ namespace myLib.Common
         /// <summary>
         /// 删除上传的文件(及缩略图)
         /// </summary>
-        /// <param name="_filepath"></param>
-        public static void DeleteUpFile(string _filepath)
+        /// <param name="filepath"></param>
+        public static void DeleteUpFile(string filepath)
         {
-            if (string.IsNullOrEmpty(_filepath))
+            if (string.IsNullOrEmpty(filepath))
             {
                 return;
             }
-            string fullpath = GetMapPath(_filepath); //原图
+            var fullpath = GetMapPath(filepath); //原图
             if (File.Exists(fullpath))
             {
                 File.Delete(fullpath);
             }
-            if (_filepath.LastIndexOf("/") >= 0)
+            if (filepath.LastIndexOf("/") >= 0)
             {
-                string thumbnailpath = _filepath.Substring(0, _filepath.LastIndexOf("/")) + "mall_" + _filepath.Substring(_filepath.LastIndexOf("/") + 1);
-                string fullTPATH = GetMapPath(thumbnailpath); //宿略图
-                if (File.Exists(fullTPATH))
+                var thumbnailpath = filepath.Substring(0, filepath.LastIndexOf("/")) + "mall_" + filepath.Substring(filepath.LastIndexOf("/") + 1);
+                var fullTpath = GetMapPath(thumbnailpath); //宿略图
+                if (File.Exists(fullTpath))
                 {
-                    File.Delete(fullTPATH);
+                    File.Delete(fullTpath);
                 }
             }
         }
@@ -841,14 +818,14 @@ namespace myLib.Common
         /// <summary>
         /// 删除指定文件夹
         /// </summary>
-        /// <param name="_dirpath">文件相对路径</param>
-        public static bool DeleteDirectory(string _dirpath)
+        /// <param name="dirpath">文件相对路径</param>
+        public static bool DeleteDirectory(string dirpath)
         {
-            if (string.IsNullOrEmpty(_dirpath))
+            if (string.IsNullOrEmpty(dirpath))
             {
                 return false;
             }
-            string fullpath = GetMapPath(_dirpath);
+            var fullpath = GetMapPath(dirpath);
             if (Directory.Exists(fullpath))
             {
                 Directory.Delete(fullpath, true);
@@ -860,17 +837,17 @@ namespace myLib.Common
         /// <summary>
         /// 修改指定文件夹名称
         /// </summary>
-        /// <param name="old_dirpath">旧相对路径</param>
-        /// <param name="new_dirpath">新相对路径</param>
+        /// <param name="oldDirpath">旧相对路径</param>
+        /// <param name="newDirpath">新相对路径</param>
         /// <returns>bool</returns>
-        public static bool MoveDirectory(string old_dirpath, string new_dirpath)
+        public static bool MoveDirectory(string oldDirpath, string newDirpath)
         {
-            if (string.IsNullOrEmpty(old_dirpath))
+            if (string.IsNullOrEmpty(oldDirpath))
             {
                 return false;
             }
-            string fulloldpath = GetMapPath(old_dirpath);
-            string fullnewpath = GetMapPath(new_dirpath);
+            var fulloldpath = GetMapPath(oldDirpath);
+            var fullnewpath = GetMapPath(newDirpath);
             if (Directory.Exists(fulloldpath))
             {
                 Directory.Move(fulloldpath, fullnewpath);
@@ -882,18 +859,18 @@ namespace myLib.Common
         /// <summary>
         /// 返回文件大小KB
         /// </summary>
-        /// <param name="_filepath">文件相对路径</param>
+        /// <param name="filepath">文件相对路径</param>
         /// <returns>int</returns>
-        public static int GetFileSize(string _filepath)
+        public static int GetFileSize(string filepath)
         {
-            if (string.IsNullOrEmpty(_filepath))
+            if (string.IsNullOrEmpty(filepath))
             {
                 return 0;
             }
-            string fullpath = GetMapPath(_filepath);
+            var fullpath = GetMapPath(filepath);
             if (File.Exists(fullpath))
             {
-                FileInfo fileInfo = new FileInfo(fullpath);
+                var fileInfo = new FileInfo(fullpath);
                 return ((int)fileInfo.Length) / 1024;
             }
             return 0;
@@ -902,17 +879,17 @@ namespace myLib.Common
         /// <summary>
         /// 返回文件扩展名，不含“.”
         /// </summary>
-        /// <param name="_filepath">文件全名称</param>
+        /// <param name="filepath">文件全名称</param>
         /// <returns>string</returns>
-        public static string GetFileExt(string _filepath)
+        public static string GetFileExt(string filepath)
         {
-            if (string.IsNullOrEmpty(_filepath))
+            if (string.IsNullOrEmpty(filepath))
             {
                 return "";
             }
-            if (_filepath.LastIndexOf(".") > 0)
+            if (filepath.LastIndexOf(".") > 0)
             {
-                return _filepath.Substring(_filepath.LastIndexOf(".") + 1); //文件扩展名，不含“.”
+                return filepath.Substring(filepath.LastIndexOf(".") + 1); //文件扩展名，不含“.”
             }
             return "";
         }
@@ -920,21 +897,21 @@ namespace myLib.Common
         /// <summary>
         /// 返回文件名，不含路径
         /// </summary>
-        /// <param name="_filepath">文件相对路径</param>
+        /// <param name="filepath">文件相对路径</param>
         /// <returns>string</returns>
-        public static string GetFileName(string _filepath)
+        public static string GetFileName(string filepath)
         {
-            return _filepath.Substring(_filepath.LastIndexOf(@"/") + 1);
+            return filepath.Substring(filepath.LastIndexOf(@"/") + 1);
         }
 
         /// <summary>
         /// 文件是否存在
         /// </summary>
-        /// <param name="_filepath">文件相对路径</param>
+        /// <param name="filepath">文件相对路径</param>
         /// <returns>bool</returns>
-        public static bool FileExists(string _filepath)
+        public static bool FileExists(string filepath)
         {
-            string fullpath = GetMapPath(_filepath);
+            var fullpath = GetMapPath(filepath);
             if (File.Exists(fullpath))
             {
                 return true;
@@ -947,14 +924,14 @@ namespace myLib.Common
         /// </summary>
         public static string GetDomainStr(string key, string uriPath)
         {
-            myLib.CacheStorage.ICacheStorage cacheHelper = myLib.CacheStorage.CacheFactory.CreateCacheFactory();
-            string result = cacheHelper.Get(key) as string;
+            var cacheHelper = CacheFactory.CreateCacheFactory();
+            var result = cacheHelper.Get(key) as string;
             if (result == null)
             {
-                System.Net.WebClient client = new System.Net.WebClient();
+                var client = new WebClient();
                 try
                 {
-                    client.Encoding = System.Text.Encoding.UTF8;
+                    client.Encoding = Encoding.UTF8;
                     result = client.DownloadString(uriPath);
                 }
                 catch
@@ -977,7 +954,7 @@ namespace myLib.Common
         /// <param name="strValue">值</param>
         public static void WriteCookie(string strName, string strValue)
         {
-            HttpCookie cookie = HttpContext.Current.Request.Cookies[strName];
+            var cookie = HttpContext.Current.Request.Cookies[strName];
             if (cookie == null)
             {
                 cookie = new HttpCookie(strName);
@@ -994,7 +971,7 @@ namespace myLib.Common
         /// <param name="strValue">值</param>
         public static void WriteCookie(string strName, string key, string strValue)
         {
-            HttpCookie cookie = HttpContext.Current.Request.Cookies[strName];
+            var cookie = HttpContext.Current.Request.Cookies[strName];
             if (cookie == null)
             {
                 cookie = new HttpCookie(strName);
@@ -1012,7 +989,7 @@ namespace myLib.Common
         /// <param name="expires">过期时间（分钟）</param>
         public static void WriteCookie(string strName, string key, string strValue, int expires)
         {
-            HttpCookie cookie = HttpContext.Current.Request.Cookies[strName];
+            var cookie = HttpContext.Current.Request.Cookies[strName];
             if (cookie == null)
             {
                 cookie = new HttpCookie(strName);
@@ -1030,7 +1007,7 @@ namespace myLib.Common
         /// <param name="expires">过期时间(分钟)</param>
         public static void WriteCookie(string strName, string strValue, int expires)
         {
-            HttpCookie cookie = HttpContext.Current.Request.Cookies[strName];
+            var cookie = HttpContext.Current.Request.Cookies[strName];
             if (cookie == null)
             {
                 cookie = new HttpCookie(strName);
@@ -1102,7 +1079,7 @@ namespace myLib.Common
             {
                 return "";
             }
-            int pageCount = totalCount / pageSize;
+            var pageCount = totalCount / pageSize;
             if (pageCount < 1)
             {
                 return "";
@@ -1115,12 +1092,12 @@ namespace myLib.Common
             {
                 return "";
             }
-            StringBuilder pageStr = new StringBuilder();
-            string pageId = "__id__";
-            string firstBtn = "<a href=\"" + ReplaceStr(linkUrl, pageId, (pageIndex - 1).ToString()) + "\">«上一页</a>";
-            string lastBtn = "<a href=\"" + ReplaceStr(linkUrl, pageId, (pageIndex + 1).ToString()) + "\">下一页»</a>";
-            string firstStr = "<a href=\"" + ReplaceStr(linkUrl, pageId, "1") + "\">1</a>";
-            string lastStr = "<a href=\"" + ReplaceStr(linkUrl, pageId, pageCount.ToString()) + "\">" + pageCount.ToString() + "</a>";
+            var pageStr = new StringBuilder();
+            var pageId = "__id__";
+            var firstBtn = "<a href=\"" + ReplaceStr(linkUrl, pageId, (pageIndex - 1).ToString()) + "\">«上一页</a>";
+            var lastBtn = "<a href=\"" + ReplaceStr(linkUrl, pageId, (pageIndex + 1).ToString()) + "\">下一页»</a>";
+            var firstStr = "<a href=\"" + ReplaceStr(linkUrl, pageId, "1") + "\">1</a>";
+            var lastStr = "<a href=\"" + ReplaceStr(linkUrl, pageId, pageCount.ToString()) + "\">" + pageCount.ToString() + "</a>";
 
             if (pageIndex <= 1)
             {
@@ -1138,10 +1115,10 @@ namespace myLib.Common
             {
                 lastStr = "<span class=\"current\">" + pageCount.ToString() + "</span>";
             }
-            int firstNum = pageIndex - (centSize / 2); //中间开始的页码
+            var firstNum = pageIndex - (centSize / 2); //中间开始的页码
             if (pageIndex < centSize)
                 firstNum = 2;
-            int lastNum = pageIndex + centSize - ((centSize / 2) + 1); //中间结束的页码
+            var lastNum = pageIndex + centSize - ((centSize / 2) + 1); //中间结束的页码
             if (lastNum >= pageCount)
                 lastNum = pageCount - 1;
             pageStr.Append("<span>共" + totalCount + "记录</span>");
@@ -1150,7 +1127,7 @@ namespace myLib.Common
             {
                 pageStr.Append("<span>...</span>\n");
             }
-            for (int i = firstNum; i <= lastNum; i++)
+            for (var i = firstNum; i <= lastNum; i++)
             {
                 if (i == pageIndex)
                 {
@@ -1199,32 +1176,32 @@ namespace myLib.Common
         /// <summary>
         /// 组合URL参数
         /// </summary>
-        /// <param name="_url">页面地址</param>
-        /// <param name="_keys">参数名称</param>
-        /// <param name="_values">参数值</param>
+        /// <param name="url">页面地址</param>
+        /// <param name="keys">参数名称</param>
+        /// <param name="values">参数值</param>
         /// <returns>String</returns>
-        public static string CombUrlTxt(string _url, string _keys, params string[] _values)
+        public static string CombUrlTxt(string url, string keys, params string[] values)
         {
-            StringBuilder urlParams = new StringBuilder();
+            var urlParams = new StringBuilder();
             try
             {
-                string[] keyArr = _keys.Split(new char[] { '&' });
-                for (int i = 0; i < keyArr.Length; i++)
+                var keyArr = keys.Split(new char[] { '&' });
+                for (var i = 0; i < keyArr.Length; i++)
                 {
-                    if (!string.IsNullOrEmpty(_values[i]) && _values[i] != "0")
+                    if (!string.IsNullOrEmpty(values[i]) && values[i] != "0")
                     {
-                        _values[i] = UrlEncode(_values[i]);
-                        urlParams.Append(string.Format(keyArr[i], _values) + "&");
+                        values[i] = UrlEncode(values[i]);
+                        urlParams.Append(string.Format(keyArr[i], values) + "&");
                     }
                 }
-                if (!string.IsNullOrEmpty(urlParams.ToString()) && _url.IndexOf("?") == -1)
+                if (!string.IsNullOrEmpty(urlParams.ToString()) && url.IndexOf("?") == -1)
                     urlParams.Insert(0, "?");
             }
             catch
             {
-                return _url;
+                return url;
             }
-            return _url + DelLastChar(urlParams.ToString(), "&");
+            return url + DelLastChar(urlParams.ToString(), "&");
         }
         #endregion
 
@@ -1237,7 +1214,7 @@ namespace myLib.Common
         /// <returns></returns>
         public static string HttpPost(string url, string param)
         {
-            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(url);
+            var request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "POST";
             request.ContentType = "application/x-www-form-urlencoded";
             request.Accept = "*/*";
@@ -1257,7 +1234,7 @@ namespace myLib.Common
                 response = request.GetResponse();
                 if (response != null)
                 {
-                    StreamReader reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
+                    var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
                     responseStr = reader.ReadToEnd();
                     reader.Close();
                 }
@@ -1283,7 +1260,7 @@ namespace myLib.Common
         /// <returns></returns>
         public static string HttpGet(string url)
         {
-            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(url);
+            var request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "GET";
             //request.ContentType = "application/x-www-form-urlencoded";
             request.Accept = "*/*";
@@ -1299,7 +1276,7 @@ namespace myLib.Common
 
                 if (response != null)
                 {
-                    StreamReader reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
+                    var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
                     responseStr = reader.ReadToEnd();
                     reader.Close();
                 }
@@ -1326,7 +1303,7 @@ namespace myLib.Common
             {
                 return "error";
             }
-            StringWriter sw = new StringWriter();
+            var sw = new StringWriter();
             try
             {
                 HttpContext.Current.Server.Execute(urlPath, sw);
@@ -1344,38 +1321,13 @@ namespace myLib.Common
         }
         #endregion
 
-        #region 操作权限菜单
-        /// <summary>
-        /// 获取操作权限
-        /// </summary>
-        /// <returns>Dictionary</returns>
-        public static Dictionary<string, string> ActionType()
-        {
-            Dictionary<string, string> dic = new Dictionary<string, string>();
-            dic.Add("Show", "显示");
-            dic.Add("View", "查看");
-            dic.Add("Add", "添加");
-            dic.Add("Edit", "修改");
-            dic.Add("Delete", "删除");
-            dic.Add("Audit", "审核");
-            dic.Add("Reply", "回复");
-            dic.Add("Confirm", "确认");
-            dic.Add("Cancel", "取消");
-            dic.Add("Invalid", "作废");
-            dic.Add("Build", "生成");
-            dic.Add("Instal", "安装");
-            dic.Add("Unload", "卸载");
-            return dic;
-        }
-        #endregion
-
         #region 替换URL
         /// <summary>
         /// 替换扩展名
         /// </summary>
         public static string GetUrlExtension(string urlPage, string staticExtension)
         {
-            int indexNum = urlPage.LastIndexOf('.');
+            var indexNum = urlPage.LastIndexOf('.');
             if (indexNum > 0)
             {
                 return urlPage.Replace(urlPage.Substring(indexNum), "." + staticExtension);
@@ -1387,7 +1339,7 @@ namespace myLib.Common
         /// </summary>
         public static string GetUrlExtension(string urlPage, string staticExtension, bool defaultVal)
         {
-            int indexNum = urlPage.LastIndexOf('.');
+            var indexNum = urlPage.LastIndexOf('.');
             if (indexNum > 0)
             {
                 return urlPage.Replace(urlPage.Substring(indexNum), "." + staticExtension);
@@ -1404,6 +1356,132 @@ namespace myLib.Common
                 }
             }
             return urlPage;
+        }
+        #endregion
+
+        #region Url补全 +static string UrlComplete(string url, string defProtocol)
+
+        /// <summary>
+        /// Url补全（不存在http或https协议头，则自动添加，默认http://）
+        /// </summary>
+        /// <param name="url">URL</param>
+        /// <returns></returns>
+        public static string UrlComplete(string url)
+        {
+            return UrlComplete(url, "http://");
+        }
+        /// <summary>
+        /// Url补全
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="defProtocol">默认协议头，若url参数不存在协议头将添加此默认协议头（e.g. http://）</param>
+        /// <returns></returns>
+        public static string UrlComplete(string url, string defProtocol)
+        {
+            if (String.IsNullOrEmpty(url)) return String.Empty;
+            if (!url.StartsWith("http://") && !url.StartsWith("https://"))
+            {
+                if (string.IsNullOrEmpty(defProtocol))
+                    defProtocol = "http://";
+                url = String.Format("{0}{1}", defProtocol, url.TrimStart('/'));
+            }
+            try
+            {
+                var uri = new Uri(url);
+                return uri.AbsoluteUri;
+            }
+            catch
+            {
+                return url;
+            }
+        }
+        #endregion
+
+        #region 生成随机文件名 +static string GenerateRandomFileName()
+        /// <summary>
+        /// 生成随机文件名
+        /// </summary>
+        /// <returns></returns>
+        public static string GenerateRandomFileName()
+        {
+            var key = new byte[10];
+            RNGCryptoServiceProvider rng = null;
+            try
+            {
+                rng = new RNGCryptoServiceProvider();
+                rng.GetBytes(key);
+
+                char[] rndCharArray = ToBase32StringSuitableForDirName(key).ToCharArray();
+                rndCharArray[8] = '.';
+                return new String(rndCharArray, 0, 12);
+            }
+            finally
+            {
+                if (rng != null)
+                    rng.Dispose();
+            }
+        }
+
+        private static readonly Char[] s_Base32Char = {
+                'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 
+                'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
+                'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 
+                'y', 'z', '0', '1', '2', '3', '4', '5'};
+        private static String ToBase32StringSuitableForDirName(byte[] buff)
+        {
+            // This routine is optimised to be used with buffs of length 20
+            Contract.Assert(((buff.Length % 5) == 0), "Unexpected hash length");
+
+            var sb = new StringBuilder();
+            byte b0, b1, b2, b3, b4;
+            int l, i;
+
+            l = buff.Length;
+            i = 0;
+
+            // Create l chars using the last 5 bits of each byte.  
+            // Consume 3 MSB bits 5 bytes at a time.
+
+            do
+            {
+                b0 = (i < l) ? buff[i++] : (byte)0;
+                b1 = (i < l) ? buff[i++] : (byte)0;
+                b2 = (i < l) ? buff[i++] : (byte)0;
+                b3 = (i < l) ? buff[i++] : (byte)0;
+                b4 = (i < l) ? buff[i++] : (byte)0;
+
+                // Consume the 5 Least significant bits of each byte
+                sb.Append(s_Base32Char[b0 & 0x1F]);
+                sb.Append(s_Base32Char[b1 & 0x1F]);
+                sb.Append(s_Base32Char[b2 & 0x1F]);
+                sb.Append(s_Base32Char[b3 & 0x1F]);
+                sb.Append(s_Base32Char[b4 & 0x1F]);
+
+                // Consume 3 MSB of b0, b1, MSB bits 6, 7 of b3, b4
+                sb.Append(s_Base32Char[(
+                        ((b0 & 0xE0) >> 5) |
+                        ((b3 & 0x60) >> 2))]);
+
+                sb.Append(s_Base32Char[(
+                        ((b1 & 0xE0) >> 5) |
+                        ((b4 & 0x60) >> 2))]);
+
+                // Consume 3 MSB bits of b2, 1 MSB bit of b3, b4
+
+                b2 >>= 5;
+
+                Contract.Assert(((b2 & 0xF8) == 0), "Unexpected set bits");
+
+                if ((b3 & 0x80) != 0)
+                    b2 |= 0x08;
+                if ((b4 & 0x80) != 0)
+                    b2 |= 0x10;
+
+                sb.Append(s_Base32Char[b2]);
+
+            } while (i < l);
+
+            return sb.ToString();
         }
         #endregion
     }

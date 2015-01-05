@@ -35,6 +35,9 @@
     <Reference Include="Enyim.Caching">
       <HintPath>..\packages\Memcached.2.12.0\lib\net40\Enyim.Caching.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.6.0.7\lib\net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Data" />
@@ -58,6 +61,8 @@
     <Compile Include="Common\MailSender.cs" />
     <Compile Include="Common\MyRequest.cs" />
     <Compile Include="Common\Utils.cs" />
+    <Compile Include="Security\Md5.cs" />
+    <Compile Include="Security\SaltHash.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

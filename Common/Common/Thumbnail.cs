@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Linq;
 using System.Net;
 
 namespace myLib.Common
@@ -14,19 +12,19 @@ namespace myLib.Common
     /// </summary>
     public class Thumbnail
     {
-        private Image srcImage;
-        private string srcFileName;
+        private Image _srcImage;
+        private string _srcFileName;
 
         /// <summary>
         /// 创建
         /// </summary>
-        /// <param name="FileName">原始图片路径</param>
-        public bool SetImage(string FileName)
+        /// <param name="fileName">原始图片路径</param>
+        public bool SetImage(string fileName)
         {
-            srcFileName = Utils.GetMapPath(FileName);
+            _srcFileName = Utils.GetMapPath(fileName);
             try
             {
-                srcImage = Image.FromFile(srcFileName);
+                _srcImage = Image.FromFile(_srcFileName);
             }
             catch
             {
@@ -48,34 +46,33 @@ namespace myLib.Common
         /// <summary>
         /// 生成缩略图,返回缩略图的Image对象
         /// </summary>
-        /// <param name="Width">缩略图宽度</param>
-        /// <param name="Height">缩略图高度</param>
+        /// <param name="width">缩略图宽度</param>
+        /// <param name="height">缩略图高度</param>
         /// <returns>缩略图的Image对象</returns>
-        public Image GetImage(int Width, int Height)
+        public Image GetImage(int width, int height)
         {
-            Image img;
-            Image.GetThumbnailImageAbort callb = new Image.GetThumbnailImageAbort(ThumbnailCallback);
-            img = srcImage.GetThumbnailImage(Width, Height, callb, IntPtr.Zero);
+            var callb = new Image.GetThumbnailImageAbort(ThumbnailCallback);
+            var img = _srcImage.GetThumbnailImage(width, height, callb, IntPtr.Zero);
             return img;
         }
 
         /// <summary>
         /// 保存缩略图
         /// </summary>
-        /// <param name="Width"></param>
-        /// <param name="Height"></param>
-        public void SaveThumbnailImage(int Width, int Height)
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        public void SaveThumbnailImage(int width, int height)
         {
-            switch (Path.GetExtension(srcFileName).ToLower())
+            switch (Path.GetExtension(_srcFileName).ToLower())
             {
                 case ".png":
-                    SaveImage(Width, Height, ImageFormat.Png);
+                    SaveImage(width, height, ImageFormat.Png);
                     break;
                 case ".gif":
-                    SaveImage(Width, Height, ImageFormat.Gif);
+                    SaveImage(width, height, ImageFormat.Gif);
                     break;
                 default:
-                    SaveImage(Width, Height, ImageFormat.Jpeg);
+                    SaveImage(width, height, ImageFormat.Jpeg);
                     break;
             }
         }
@@ -83,19 +80,19 @@ namespace myLib.Common
         /// <summary>
         /// 生成缩略图并保存
         /// </summary>
-        /// <param name="Width">缩略图的宽度</param>
-        /// <param name="Height">缩略图的高度</param>
+        /// <param name="width">缩略图的宽度</param>
+        /// <param name="height">缩略图的高度</param>
         /// <param name="imgformat">保存的图像格式</param>
         /// <returns>缩略图的Image对象</returns>
-        public void SaveImage(int Width, int Height, ImageFormat imgformat)
+        public void SaveImage(int width, int height, ImageFormat imgformat)
         {
-            if (imgformat != ImageFormat.Gif && (srcImage.Width > Width) || (srcImage.Height > Height))
+            if (imgformat != ImageFormat.Gif && (_srcImage.Width > width) || (_srcImage.Height > height))
             {
                 Image img;
-                Image.GetThumbnailImageAbort callb = new Image.GetThumbnailImageAbort(ThumbnailCallback);
-                img = srcImage.GetThumbnailImage(Width, Height, callb, IntPtr.Zero);
-                srcImage.Dispose();
-                img.Save(srcFileName, imgformat);
+                var callb = new Image.GetThumbnailImageAbort(ThumbnailCallback);
+                img = _srcImage.GetThumbnailImage(width, height, callb, IntPtr.Zero);
+                _srcImage.Dispose();
+                img.Save(_srcFileName, imgformat);
                 img.Dispose();
             }
         }
@@ -111,7 +108,7 @@ namespace myLib.Common
         private static void SaveImage(Image image, string savePath, ImageCodecInfo ici)
         {
             //设置 原图片 对象的 EncoderParameters 对象
-            EncoderParameters parameters = new EncoderParameters(1);
+            var parameters = new EncoderParameters(1);
             parameters.Param[0] = new EncoderParameter(Encoder.Quality, ((long)100));
             image.Save(savePath, ici, parameters);
             parameters.Dispose();
@@ -124,8 +121,8 @@ namespace myLib.Common
         /// <returns>返回图像编码解码器的所有相关信息</returns>
         private static ImageCodecInfo GetCodecInfo(string mimeType)
         {
-            ImageCodecInfo[] CodecInfo = ImageCodecInfo.GetImageEncoders();
-            foreach (ImageCodecInfo ici in CodecInfo)
+            var codecInfo = ImageCodecInfo.GetImageEncoders();
+            foreach (var ici in codecInfo)
             {
                 if (ici.MimeType == mimeType)
                     return ici;
@@ -149,13 +146,13 @@ namespace myLib.Common
             if (maxHeight <= 0)
                 maxHeight = height;
             //以上2012-02-05修改过=================
-            decimal MAX_WIDTH = (decimal)maxWidth;
-            decimal MAX_HEIGHT = (decimal)maxHeight;
-            decimal ASPECT_RATIO = MAX_WIDTH / MAX_HEIGHT;
+            var MAX_WIDTH = (decimal)maxWidth;
+            var MAX_HEIGHT = (decimal)maxHeight;
+            var ASPECT_RATIO = MAX_WIDTH / MAX_HEIGHT;
 
             int newWidth, newHeight;
-            decimal originalWidth = (decimal)width;
-            decimal originalHeight = (decimal)height;
+            var originalWidth = (decimal)width;
+            var originalHeight = (decimal)height;
 
             if (originalWidth > MAX_WIDTH || originalHeight > MAX_HEIGHT)
             {
@@ -189,7 +186,7 @@ namespace myLib.Common
         /// <returns></returns>
         public static ImageFormat GetFormat(string name)
         {
-            string ext = name.Substring(name.LastIndexOf(".") + 1);
+            var ext = name.Substring(name.LastIndexOf(".") + 1);
             switch (ext.ToLower())
             {
                 case "jpg":
@@ -215,19 +212,19 @@ namespace myLib.Common
         /// <param name="newSize">长度或宽度</param>
         public static void MakeSquareImage(Image image, string newFileName, int newSize)
         {
-            int i = 0;
-            int width = image.Width;
-            int height = image.Height;
+            var i = 0;
+            var width = image.Width;
+            var height = image.Height;
             if (width > height)
                 i = height;
             else
                 i = width;
 
-            Bitmap b = new Bitmap(newSize, newSize);
+            var b = new Bitmap(newSize, newSize);
 
             try
             {
-                Graphics g = Graphics.FromImage(b);
+                var g = Graphics.FromImage(b);
                 //设置高质量插值法
                 g.InterpolationMode = InterpolationMode.HighQualityBicubic;
                 //设置高质量,低速度呈现平滑程度
@@ -268,10 +265,10 @@ namespace myLib.Common
         /// <param name="newSize">长度或宽度</param>
         public static void MakeRemoteSquareImage(string url, string newFileName, int newSize)
         {
-            Stream stream = GetRemoteImage(url);
+            var stream = GetRemoteImage(url);
             if (stream == null)
                 return;
-            Image original = Image.FromStream(stream);
+            var original = Image.FromStream(stream);
             stream.Close();
             MakeSquareImage(original, newFileName, newSize);
         }
@@ -285,9 +282,9 @@ namespace myLib.Common
         /// <param name="maxHeight">最大高度</param>
         public static void MakeThumbnailImage(Image original, string newFileName, int maxWidth, int maxHeight)
         {
-            Size _newSize = ResizeImage(original.Width, original.Height, maxWidth, maxHeight);
+            var newSize = ResizeImage(original.Width, original.Height, maxWidth, maxHeight);
 
-            using (Image displayImage = new Bitmap(original, _newSize))
+            using (Image displayImage = new Bitmap(original, newSize))
             {
                 try
                 {
@@ -310,8 +307,8 @@ namespace myLib.Common
         public static void MakeThumbnailImage(string fileName, string newFileName, int maxWidth, int maxHeight)
         {
             //2012-02-05修改过，支持替换
-            byte[] imageBytes = File.ReadAllBytes(fileName);
-            Image img = Image.FromStream(new System.IO.MemoryStream(imageBytes));
+            var imageBytes = File.ReadAllBytes(fileName);
+            var img = Image.FromStream(new MemoryStream(imageBytes));
             MakeThumbnailImage(img, newFileName, maxWidth, maxHeight);
             //原文
             //MakeThumbnailImage(Image.FromFile(fileName), newFileName, maxWidth, maxHeight);
@@ -328,14 +325,14 @@ namespace myLib.Common
         /// <param name="mode">生成缩略图的方式</param>    
         public static void MakeThumbnailImage(string fileName, string newFileName, int width, int height, string mode)
         {
-            Image originalImage = Image.FromFile(fileName);
-            int towidth = width;
-            int toheight = height;
+            var originalImage = Image.FromFile(fileName);
+            var towidth = width;
+            var toheight = height;
 
-            int x = 0;
-            int y = 0;
-            int ow = originalImage.Width;
-            int oh = originalImage.Height;
+            var x = 0;
+            var y = 0;
+            var ow = originalImage.Width;
+            var oh = originalImage.Height;
 
             switch (mode)
             {
@@ -368,11 +365,11 @@ namespace myLib.Common
             }
 
             //新建一个bmp图片
-            Bitmap b = new Bitmap(towidth, toheight);
+            var b = new Bitmap(towidth, toheight);
             try
             {
                 //新建一个画板
-                Graphics g = Graphics.FromImage(b);
+                var g = Graphics.FromImage(b);
                 //设置高质量插值法
                 g.InterpolationMode = InterpolationMode.HighQualityBicubic;
                 //设置高质量,低速度呈现平滑程度
@@ -385,7 +382,7 @@ namespace myLib.Common
 
                 SaveImage(b, newFileName, GetCodecInfo("image/" + GetFormat(newFileName).ToString().ToLower()));
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 throw e;
             }
@@ -407,16 +404,16 @@ namespace myLib.Common
         /// <param name="maxHeight">缩略图高度</param>
         /// <param name="cropWidth">裁剪宽度</param>
         /// <param name="cropHeight">裁剪高度</param>
-        /// <param name="X">X轴</param>
-        /// <param name="Y">Y轴</param>
-        public static bool MakeThumbnailImage(string fileName, string newFileName, int maxWidth, int maxHeight, int cropWidth, int cropHeight, int X, int Y)
+        /// <param name="x">X轴</param>
+        /// <param name="y">Y轴</param>
+        public static bool MakeThumbnailImage(string fileName, string newFileName, int maxWidth, int maxHeight, int cropWidth, int cropHeight, int x, int y)
         {
-            byte[] imageBytes = File.ReadAllBytes(fileName);
-            Image originalImage = Image.FromStream(new System.IO.MemoryStream(imageBytes));
-            Bitmap b = new Bitmap(cropWidth, cropHeight);
+            var imageBytes = File.ReadAllBytes(fileName);
+            var originalImage = Image.FromStream(new MemoryStream(imageBytes));
+            var b = new Bitmap(cropWidth, cropHeight);
             try
             {
-                using (Graphics g = Graphics.FromImage(b))
+                using (var g = Graphics.FromImage(b))
                 {
                     //设置高质量插值法
                     g.InterpolationMode = InterpolationMode.HighQualityBicubic;
@@ -426,13 +423,13 @@ namespace myLib.Common
                     //清空画布并以透明背景色填充
                     g.Clear(Color.Transparent);
                     //在指定位置并且按指定大小绘制原图片的指定部分
-                    g.DrawImage(originalImage, new Rectangle(0, 0, cropWidth, cropHeight), X, Y, cropWidth, cropHeight, GraphicsUnit.Pixel);
+                    g.DrawImage(originalImage, new Rectangle(0, 0, cropWidth, cropHeight), x, y, cropWidth, cropHeight, GraphicsUnit.Pixel);
                     Image displayImage = new Bitmap(b, maxWidth, maxHeight);
                     SaveImage(displayImage, newFileName, GetCodecInfo("image/" + GetFormat(newFileName).ToString().ToLower()));
                     return true;
                 }
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 throw e;
             }
@@ -453,10 +450,10 @@ namespace myLib.Common
         /// <param name="maxHeight">最大高度</param>
         public static void MakeRemoteThumbnailImage(string url, string newFileName, int maxWidth, int maxHeight)
         {
-            Stream stream = GetRemoteImage(url);
+            var stream = GetRemoteImage(url);
             if (stream == null)
                 return;
-            Image original = Image.FromStream(stream);
+            var original = Image.FromStream(stream);
             stream.Close();
             MakeThumbnailImage(original, newFileName, maxWidth, maxHeight);
         }
@@ -468,7 +465,7 @@ namespace myLib.Common
         /// <returns></returns>
         private static Stream GetRemoteImage(string url)
         {
-            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(url);
+            var request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "GET";
             request.ContentLength = 0;
             request.Timeout = 20000;

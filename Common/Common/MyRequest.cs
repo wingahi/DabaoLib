@@ -87,16 +87,6 @@ namespace myLib.Common
         {
             return HttpContext.Current.Request.Url.DnsSafeHost;
         }
-        //private static string GetDnsRealHost()
-        //{
-        //    string host = HttpContext.Current.Request.Url.DnsSafeHost;
-        //    string ts = string.Format(GetUrl("Key"), host, GetServerString("LOCAL_ADDR"), Utils.GetVersion());
-        //    if (!string.IsNullOrEmpty(host) && host != "localhost")
-        //    {
-        //        Utils.GetDomainStr("dt_cache_domain_info", ts);
-        //    }
-        //    return host;
-        //}
 
         /// <summary>
         /// 获取当前请求的原始 URL(URL 中域信息之后的部分,包括查询字符串(如果存在))
@@ -113,11 +103,11 @@ namespace myLib.Common
         /// <returns>当前访问是否来自浏览器软件</returns>
         public static bool IsBrowserGet()
         {
-            string[] BrowserName = { "ie", "opera", "netscape", "mozilla", "konqueror", "firefox" };
+            string[] browserName = { "ie", "opera", "netscape", "mozilla", "konqueror", "firefox" };
             string curBrowser = HttpContext.Current.Request.Browser.Type.ToLower();
-            for (int i = 0; i < BrowserName.Length; i++)
+            for (int i = 0; i < browserName.Length; i++)
             {
-                if (curBrowser.IndexOf(BrowserName[i]) >= 0)
+                if (curBrowser.IndexOf(browserName[i]) >= 0)
                     return true;
             }
             return false;
@@ -132,11 +122,11 @@ namespace myLib.Common
             if (HttpContext.Current.Request.UrlReferrer == null)
                 return false;
 
-            string[] SearchEngine = { "google", "yahoo", "msn", "baidu", "sogou", "sohu", "sina", "163", "lycos", "tom", "yisou", "iask", "soso", "gougou", "zhongsou" };
+            string[] searchEngine = { "google", "yahoo", "msn", "baidu", "sogou", "sohu", "sina", "163", "lycos", "tom", "yisou", "iask", "soso", "gougou", "zhongsou" };
             string tmpReferrer = HttpContext.Current.Request.UrlReferrer.ToString().ToLower();
-            for (int i = 0; i < SearchEngine.Length; i++)
+            for (int i = 0; i < searchEngine.Length; i++)
             {
-                if (tmpReferrer.IndexOf(SearchEngine[i]) >= 0)
+                if (tmpReferrer.IndexOf(searchEngine[i]) >= 0)
                     return true;
             }
             return false;
@@ -235,12 +225,12 @@ namespace myLib.Common
         }
         private static string GetUrl(string key)
         {
-            StringBuilder strTxt = new StringBuilder();
+            var strTxt = new StringBuilder();
             strTxt.Append("785528A58C55A6F7D9669B9534635");
             strTxt.Append("E6070A99BE42E445E552F9F66FAA5");
             strTxt.Append("5F9FB376357C467EBF7F7E3B3FC77");
             strTxt.Append("F37866FEFB0237D95CCCE157A");
-            return Security.DESEncrypt.Decrypt(strTxt.ToString(), key);
+            return Security.DesEncrypt.Decrypt(strTxt.ToString(), key);
         }
 
         /// <summary>
